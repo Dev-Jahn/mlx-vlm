@@ -27,8 +27,10 @@ class Qwen3VLProcessor(ProcessorMixin):
         image_processor=None,
         tokenizer=None,
         chat_template=None,
+        video_processor=None,
         **kwargs,
     ):
+        self.video_processor = video_processor
         self.image_token = (
             "<|image_pad|>"
             if not hasattr(tokenizer, "image_token")
@@ -96,8 +98,14 @@ class Qwen3VLProcessor(ProcessorMixin):
             image_grid_thw = None
 
         if videos is not None:
-            videos_inputs = self.image_processor(videos=videos)
-            video_grid_thw = videos_inputs["video_grid_thw"]
+            if self.video_processor is not None:
+                videos_inputs = self.video_processor(videos=videos)
+            else:
+                # Fallback for older transformers without separate video processor
+                videos_inputs = self.image_processor(images=videos)
+            video_grid_thw = videos_inputs.get(
+                "video_grid_thw", videos_inputs.get("image_grid_thw")
+            )
         else:
             video_grid_thw = None
 
@@ -171,7 +179,7 @@ class Qwen3VLProcessor(ProcessorMixin):
         import json
         from pathlib import Path
 
-        from transformers import AutoImageProcessor, AutoTokenizer
+        from transformers import AutoImageProcessor, AutoTokenizer, AutoVideoProcessor
 
         kwargs.pop("use_fast", None)
         tokenizer = AutoTokenizer.from_pretrained(
@@ -208,9 +216,17 @@ class Qwen3VLProcessor(ProcessorMixin):
                 **ip_overrides,
                 **kwargs,
             )
+        try:
+            video_processor = AutoVideoProcessor.from_pretrained(
+                pretrained_model_name_or_path, **kwargs
+            )
+        except Exception:
+            video_processor = None
+
         return cls(
             image_processor=image_processor,
             tokenizer=tokenizer,
+            video_processor=video_processor,
             **proc_kwargs,
         )
 
