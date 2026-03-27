@@ -27,10 +27,9 @@ class Qwen3VLProcessor(ProcessorMixin):
         image_processor=None,
         tokenizer=None,
         chat_template=None,
-        video_processor=None,
         **kwargs,
     ):
-        self.video_processor = video_processor
+        self.video_processor = kwargs.pop("video_processor", None)
         self.image_token = (
             "<|image_pad|>"
             if not hasattr(tokenizer, "image_token")

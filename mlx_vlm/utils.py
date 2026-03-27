@@ -475,6 +475,27 @@ def load_processor(
     model_path, add_detokenizer=True, eos_token_ids=None, **kwargs
 ) -> ProcessorMixin:
 
+    # Import model module first to activate any AutoProcessor patches
+    # (e.g. install_auto_processor_patch for qwen3_5, qwen3_vl, etc.)
+    try:
+        import json as _json
+        from pathlib import Path
+
+        _cfg_path = Path(model_path) / "config.json"
+        if _cfg_path.exists():
+            with open(_cfg_path) as _f:
+                _cfg = _json.load(_f)
+        else:
+            from huggingface_hub import hf_hub_download
+            _dl = hf_hub_download(str(model_path), "config.json")
+            with open(_dl) as _f:
+                _cfg = _json.load(_f)
+        _model_type = _cfg.get("model_type", "").lower()
+        _model_type = MODEL_REMAPPING.get(_model_type, _model_type)
+        importlib.import_module(f"mlx_vlm.models.{_model_type}")
+    except Exception:
+        pass
+
     processor = AutoProcessor.from_pretrained(model_path, use_fast=True, **kwargs)
     if add_detokenizer:
         detokenizer_class = load_tokenizer(model_path, return_tokenizer=False)
