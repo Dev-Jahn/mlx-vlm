@@ -17,8 +17,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -31,6 +29,7 @@ Issues = "https://github.com/Blaizzy/mlx-vlm/issues"
 
 [project.scripts]
 "mlx_vlm.chat_ui" = "mlx_vlm.chat_ui:main"
+"mlx_vlm.chat" = "mlx_vlm.chat:main"
 "mlx_vlm.convert" = "mlx_vlm.convert:main"
 "mlx_vlm.generate" = "mlx_vlm.generate:main"
 "mlx_vlm.server" = "mlx_vlm.server:main"
@@ -47,3 +46,5 @@ dependencies = {file = ["requirements.txt"]}
 ui = ["gradio>=5.19.0"]
 cuda = ["mlx-cuda"]
 cpu = ["mlx-cpu"]
+train = ["datasets>=2.19.1"]
+realtime = ["sounddevice>=0.5.0"]

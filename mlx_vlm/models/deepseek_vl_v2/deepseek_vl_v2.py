@@ -4,15 +4,11 @@ from typing import Optional
 import mlx.core as mx
 import mlx.nn as nn
 import numpy as np
-from transformers import AutoProcessor
 
 from ..base import InputEmbeddingsFeatures
 from .config import ModelConfig, ProjectorConfig
 from .language import LanguageModel
-from .processing_deepsek_vl_v2 import DeepseekVLV2Processor
 from .vision import VisionModel
-
-AutoProcessor.register("deepseek_vl_v2", DeepseekVLV2Processor)
 
 
 class MlpProjector(nn.Module):
@@ -353,13 +349,17 @@ class Model(nn.Module):
         # Get the input embeddings from the language model
         input_embeds = self.language_model.model.embed_tokens(input_ids)
 
-        # Get the ouptut hidden states from the vision model
-        hidden_states, *_ = self.vision(
-            total_tiles.transpose(0, 2, 3, 1), output_hidden_states=True
-        )
+        cached = kwargs.get("cached_image_features", None)
+        if cached is not None:
+            image_features = cached
+        else:
+            # Get the ouptut hidden states from the vision model
+            hidden_states, *_ = self.vision(
+                total_tiles.transpose(0, 2, 3, 1), output_hidden_states=True
+            )
 
-        # Pass image features through the multi-modal projector
-        image_features = self.projector(hidden_states)
+            # Pass image features through the multi-modal projector
+            image_features = self.projector(hidden_states)
 
         _, hw, n_dim = image_features.shape
         h = w = int(hw**0.5)

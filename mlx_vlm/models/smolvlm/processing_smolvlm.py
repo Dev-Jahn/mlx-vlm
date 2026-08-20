@@ -157,6 +157,10 @@ class SmolVLMProcessor(ProcessorMixin):
         if text is None and images is None and videos is None:
             raise ValueError("You must provide one of `text`, `images` or `videos`.")
 
+        # Treat video frames as images
+        if videos is not None and images is None:
+            images = videos
+
         if text is not None:
             if isinstance(text, str):
                 text = [text]
@@ -170,8 +174,8 @@ class SmolVLMProcessor(ProcessorMixin):
             images = self.image_processor.fetch_images(images)
             images = make_nested_list_of_images(images)
 
-            # Separate image kwargs
-            images_kwargs = {}
+            # Separate image kwargs — always request row/col info for tiling
+            images_kwargs = {"return_row_col_info": True}
             for k in list(kwargs.keys()):
                 if k in ("return_row_col_info",):
                     images_kwargs[k] = kwargs.pop(k)
@@ -253,6 +257,11 @@ class SmolVLMProcessor(ProcessorMixin):
             **ip_overrides,
             **kwargs,
         )
+        if "chat_template" not in proc_kwargs:
+            chat_template = getattr(tokenizer, "chat_template", None)
+            if chat_template is not None:
+                proc_kwargs["chat_template"] = chat_template
+
         return cls(
             image_processor=image_processor,
             tokenizer=tokenizer,
